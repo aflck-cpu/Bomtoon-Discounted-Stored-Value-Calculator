@@ -1,0 +1,739 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>儲值配置計算器</title>
+    <style>
+        /* ============================================================
+           【色彩控制中心】：直接修改此處的色碼即可更換顏色
+           ============================================================ */
+        :root {
+            --primary: #ff33ae;        /* 【主色調】：頂部標題、選中邊框 */
+            --primary-light: #dbeafe;  /* 【淺主色】：選中狀態背景 */
+            --bg: #f8fafc;             /* 【全域背景】：外層底色 */
+            --card-bg: #ffffff;        /* 【主卡片底色】：計算器白色主體 */
+            --text: #1e293b;           /* 【主要文字顏色】：標籤與標題 */
+            --text-muted: #64748b;     /* 【次要文字顏色】：說明小字 */
+            --accent: #ef4444;         /* 【強調高亮色】：花費金額大字 */
+            --border: #e2e8f0;         /* 【邊框與分隔線顏色】 */
+
+            /* 圖片專屬按鈕樣式（清空、+100、+500） */
+            --chip-bg: #e0edff;        /* 【修改顏色】：快捷按鈕淡藍色底色 */
+            --chip-text: #4a71e0;      /* 【修改顏色】：快捷按鈕文字顏色 */
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            background-color: var(--bg);
+            color: var(--text);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 16px;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 760px;
+            background: var(--card-bg);
+            border-radius: 16px;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        header {
+            background: var(--primary);
+            color: white;
+            padding: 20px 24px;
+            text-align: center;
+        }
+
+        header h1 {
+            font-size: 1.25rem;
+            font-weight: 700;
+        }
+
+        .plans-badge {
+            margin-top: 8px;
+            font-size: 0.85rem;
+            opacity: 0.9;
+        }
+
+        /* 模式切換按鈕區 */
+        .mode-selector {
+            display: flex;
+            gap: 10px;
+            padding: 16px 24px 0 24px;
+        }
+
+        .mode-btn {
+            flex: 1;
+            padding: 12px;
+            font-size: 0.95rem;
+            font-weight: 700;
+            border: 2px solid var(--border);
+            border-radius: 10px;
+            background: white;
+            color: var(--text-muted);
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .mode-btn.active {
+            border-color: var(--primary);
+            background: var(--primary-light);
+            color: var(--primary);
+        }
+
+        .content-layout {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 20px;
+            padding: 20px 24px 24px 24px;
+        }
+
+        @media (min-width: 640px) {
+            .content-layout {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+
+        .input-card, .result-card {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .input-group label {
+            display: block;
+            font-size: 0.9rem;
+            font-weight: 600;
+            margin-bottom: 6px;
+            color: var(--text);
+        }
+
+        .input-wrapper input {
+            width: 100%;
+            padding: 12px 14px;
+            border: 1.5px solid var(--border);
+            border-radius: 10px;
+            font-size: 1.1rem;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        .input-wrapper input:focus {
+            border-color: var(--primary);
+        }
+
+        .quick-chips {
+            display: flex;
+            gap: 8px;
+            margin-top: 8px;
+        }
+
+        .chip {
+            padding: 6px 16px;
+            background: var(--chip-bg);
+            color: var(--chip-text);
+            border: none;
+            border-radius: 8px;
+            font-size: 0.95rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: transform 0.1s, opacity 0.2s;
+        }
+
+        .chip:active {
+            transform: scale(0.95);
+            opacity: 0.8;
+        }
+
+        .result-card {
+            background: #f1f5f9;
+            padding: 20px;
+            border-radius: 12px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        .result-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 0;
+            border-bottom: 1px dashed var(--border);
+        }
+
+        .result-row:last-child {
+            border-bottom: none;
+        }
+
+        .result-label {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+
+        .result-val {
+            font-weight: 700;
+            font-size: 1.05rem;
+        }
+
+        .highlight-cost {
+            font-size: 1.6rem;
+            color: var(--accent);
+            font-weight: 800;
+        }
+
+        .breakdown-box {
+            background: white;
+            border-radius: 8px;
+            padding: 12px;
+            margin-top: 10px;
+        }
+
+        /* 儲存紀錄區塊 */
+        .save-box {
+            margin-top: 14px;
+            padding-top: 12px;
+            border-top: 1px solid var(--border);
+            display: flex;
+            gap: 8px;
+        }
+
+        .save-input {
+            flex: 1;
+            padding: 8px 12px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            font-size: 0.9rem;
+            outline: none;
+        }
+
+        .save-input:focus {
+            border-color: var(--primary);
+        }
+
+        .btn-save {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 8px 14px;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            font-weight: 700;
+            cursor: pointer;
+            white-space: nowrap;
+        }
+
+        .auto-save-tip {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            margin-top: 6px;
+            text-align: right;
+        }
+
+        /* 歷史紀錄外層區塊 */
+        .history-section {
+            border-top: 1px solid var(--border);
+            padding: 20px 24px 24px 24px;
+            background: #ffffff;
+        }
+
+        .history-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 14px;
+        }
+
+        .history-header h2 {
+            font-size: 1.05rem;
+            font-weight: 700;
+            color: var(--text);
+        }
+
+        .history-empty {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+            text-align: center;
+            padding: 16px 0;
+        }
+
+        .history-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            max-height: 280px;
+            overflow-y: auto;
+        }
+
+        .history-item {
+            background: #f8fafc;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 12px 14px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .history-meta {
+            display: flex;
+            flex-direction: column;
+            gap: 3px;
+        }
+
+        .history-title {
+            font-weight: 700;
+            font-size: 0.95rem;
+            color: var(--text);
+        }
+
+        .history-details {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+        }
+
+        .history-actions {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .btn-load {
+            background: var(--chip-bg);
+            color: var(--chip-text);
+            border: none;
+            padding: 5px 10px;
+            border-radius: 6px;
+            font-size: 0.8rem;
+            font-weight: 700;
+            cursor: pointer;
+        }
+
+        .btn-delete {
+            background: #fee2e2;
+            color: #dc2626;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 6px;
+            font-size: 0.8rem;
+            font-weight: 700;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <h1>優儲配置計算器</h1>
+        <div class="plans-badge" id="bannerBadge">當前選擇：489、786方案組合</div>
+    </header>
+
+    <!-- 模式選擇 -->
+    <div class="mode-selector">
+        <button class="mode-btn active" id="btnModeClassic" onclick="setMode('classic')">
+            489、786 方案<br><small style="font-weight:normal;">(489元=180c / 786元=290c)</small>
+        </button>
+        <button class="mode-btn" id="btnMode666" onclick="setMode('666')">
+            666 優儲方案<br><small style="font-weight:normal;">(666元=246c)</small>
+        </button>
+    </div>
+
+    <div class="content-layout">
+        <!-- 輸入區塊 -->
+        <div class="input-card">
+            <div class="input-group">
+                <label for="currentAmountInput">目前持有的 c 數量</label>
+                <div class="input-wrapper">
+                    <input type="number" id="currentAmountInput" inputmode="numeric" placeholder="請輸入現有數值 (例如 0)" min="0">
+                </div>
+                <div class="quick-chips">
+                    <button class="chip" onclick="clearInput('currentAmountInput')">清空</button>
+                    <button class="chip" onclick="addValue('currentAmountInput', 100)">+100</button>
+                    <button class="chip" onclick="addValue('currentAmountInput', 500)">+500</button>
+                </div>
+            </div>
+
+            <div class="input-group">
+                <label for="targetAmountInput">目標需要的 c 數量</label>
+                <div class="input-wrapper">
+                    <input type="number" id="targetAmountInput" inputmode="numeric" placeholder="請直接輸入目標數值" min="0">
+                </div>
+                <div class="quick-chips">
+                    <button class="chip" onclick="clearInput('targetAmountInput')">清空</button>
+                    <button class="chip" onclick="addValue('targetAmountInput', 100)">+100</button>
+                    <button class="chip" onclick="addValue('targetAmountInput', 500)">+500</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 運算結果展示區塊 -->
+        <div class="result-card">
+            <div>
+                <div class="result-row">
+                    <span class="result-label">尚需補充量</span>
+                    <span class="result-val" id="displayNeeded">-</span>
+                </div>
+
+                <div class="breakdown-box" id="breakdownContainer">
+                    <!-- 由 JS 動態注入購買次數 -->
+                </div>
+
+                <div class="result-row" style="margin-top: 10px;">
+                    <span class="result-label">實際獲得 / 最終總量</span>
+                    <span class="result-val" id="displayFinal">-</span>
+                </div>
+            </div>
+
+            <div>
+                <div class="result-row" style="margin-top: 16px; border: none;">
+                    <span class="result-label" style="font-size: 1.1rem; font-weight: 700;">最低總花費</span>
+                    <span class="highlight-cost" id="displayCost">$0</span>
+                </div>
+
+                <!-- 儲存紀錄區 -->
+                <div class="save-box">
+                    <input type="text" id="recordNameInput" class="save-input" placeholder="自訂紀錄名稱 (未填則為「未命名N」)">
+                    <button class="btn-save" onclick="manualSaveRecord()">儲存此紀錄</button>
+                </div>
+                <div class="auto-save-tip">提示：跳出或關閉網頁前，若未儲存將自動備份</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 歷史紀錄管理清單 -->
+    <div class="history-section">
+        <div class="history-header">
+            <h2>儲存的歷史紀錄</h2>
+            <button class="chip" style="font-size: 0.75rem; padding: 4px 10px;" onclick="clearAllHistory()">清空全部</button>
+        </div>
+        <div id="historyListContainer" class="history-list">
+            <!-- 歷史紀錄項目由 JS 動態生成 -->
+        </div>
+    </div>
+</div>
+
+<script>
+    let currentMode = 'classic';
+    let latestResult = null;
+    let isCurrentStateSaved = false; // 追蹤當前計算狀態是否已完成儲存
+
+    const currentInput = document.getElementById('currentAmountInput');
+    const targetInput = document.getElementById('targetAmountInput');
+    const bannerBadge = document.getElementById('bannerBadge');
+    const breakdownContainer = document.getElementById('breakdownContainer');
+    const recordNameInput = document.getElementById('recordNameInput');
+    const historyListContainer = document.getElementById('historyListContainer');
+
+    function setMode(mode) {
+        currentMode = mode;
+        document.getElementById('btnModeClassic').classList.toggle('active', mode === 'classic');
+        document.getElementById('btnMode666').classList.toggle('active', mode === '666');
+
+        if (mode === 'classic') {
+            bannerBadge.innerText = "當前選擇：489、786方案組合";
+        } else {
+            bannerBadge.innerText = "當前選擇：666優儲方案 (666元 = 246c)";
+        }
+
+        refreshCalculation();
+    }
+
+    function calculateOptimalPlan(currentAmount, targetAmount, mode) {
+        const neededAmount = Math.max(0, targetAmount - currentAmount);
+
+        if (neededAmount === 0) {
+            return {
+                neededAmount: 0,
+                obtainedAmount: 0,
+                finalAmount: currentAmount,
+                minCost: 0,
+                breakdown: mode === 'classic' ? [
+                    { label: "方案 A (180c)", count: 0, detail: "0c" },
+                    { label: "方案 B (290c)", count: 0, detail: "0c" }
+                ] : [
+                    { label: "666 優儲 (246c)", count: 0, detail: "0c" }
+                ]
+            };
+        }
+
+        if (mode === '666') {
+            const count666 = Math.ceil(neededAmount / 246);
+            const totalCost = count666 * 666;
+            const obtained = count666 * 246;
+
+            return {
+                neededAmount: neededAmount,
+                obtainedAmount: obtained,
+                finalAmount: currentAmount + obtained,
+                minCost: totalCost,
+                breakdown: [
+                    { label: "666 優儲 (246c)", count: count666, detail: `${obtained}c` }
+                ]
+            };
+        }
+
+        let minCost = Infinity;
+        let bestPlanA = 0;
+        let bestPlanB = 0;
+
+        const maxPlanA = Math.ceil(neededAmount / 180);
+
+        for (let planA = 0; planA <= maxPlanA; planA++) {
+            const remainingDeficit = neededAmount - (planA * 180);
+            const planB = Math.max(0, Math.ceil(remainingDeficit / 290));
+            const totalCost = (planA * 489) + (planB * 786);
+
+            if (totalCost < minCost) {
+                minCost = totalCost;
+                bestPlanA = planA;
+                bestPlanB = planB;
+            } else if (totalCost === minCost) {
+                const currentTotalC = (planA * 180) + (planB * 290);
+                const bestTotalC = (bestPlanA * 180) + (bestPlanB * 290);
+                if (currentTotalC > bestTotalC) {
+                    bestPlanA = planA;
+                    bestPlanB = planB;
+                }
+            }
+        }
+
+        const obtainedAmount = (bestPlanA * 180) + (bestPlanB * 290);
+
+        return {
+            neededAmount: neededAmount,
+            obtainedAmount: obtainedAmount,
+            finalAmount: currentAmount + obtainedAmount,
+            minCost: minCost,
+            breakdown: [
+                { label: "方案 A 購買次數", count: bestPlanA, detail: `${bestPlanA * 180}c` },
+                { label: "方案 B 購買次數", count: bestPlanB, detail: `${bestPlanB * 290}c` }
+            ]
+        };
+    }
+
+    function refreshCalculation() {
+        const rawTarget = targetInput.value.trim();
+
+        if (rawTarget === "") {
+            latestResult = null;
+            document.getElementById('displayNeeded').innerText = "等待輸入";
+            document.getElementById('displayFinal').innerText = "-";
+            document.getElementById('displayCost').innerText = "$0";
+            renderBreakdown([
+                { label: currentMode === 'classic' ? "方案 A / B" : "666 優儲", count: "-", detail: "" }
+            ]);
+            return;
+        }
+
+        const currentAmount = Math.max(0, parseInt(currentInput.value) || 0);
+        const targetAmount = Math.max(0, parseInt(rawTarget) || 0);
+
+        const result = calculateOptimalPlan(currentAmount, targetAmount, currentMode);
+        latestResult = {
+            mode: currentMode,
+            currentAmount: currentAmount,
+            targetAmount: targetAmount,
+            ...result
+        };
+
+        // 每次數值變動，將已儲存標記重設為 false
+        isCurrentStateSaved = false;
+
+        document.getElementById('displayNeeded').innerText = `${result.neededAmount} c`;
+        document.getElementById('displayFinal').innerText = `+${result.obtainedAmount} (共 ${result.finalAmount} c)`;
+        document.getElementById('displayCost').innerText = `$${result.minCost.toLocaleString()}`;
+
+        renderBreakdown(result.breakdown);
+    }
+
+    function renderBreakdown(items) {
+        breakdownContainer.innerHTML = items.map(item => `
+            <div class="result-row">
+                <span class="result-label">${item.label}</span>
+                <span class="result-val">${item.count} ${typeof item.count === 'number' ? `次 (${item.detail})` : ''}</span>
+            </div>
+        `).join('');
+    }
+
+    function addValue(inputId, valueToAdd) {
+        const element = document.getElementById(inputId);
+        element.value = (parseInt(element.value) || 0) + valueToAdd;
+        refreshCalculation();
+    }
+
+    function clearInput(inputId) {
+        const element = document.getElementById(inputId);
+        element.value = "";
+        refreshCalculation();
+    }
+
+    // ==========================================
+    // 歷史紀錄處理邏輯（localStorage）
+    // ==========================================
+    const STORAGE_KEY = 'c_calculator_records_v1';
+
+    function getStoredRecords() {
+        try {
+            return JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
+        } catch {
+            return [];
+        }
+    }
+
+    // 計算下一個「未命名N」的數字序號
+    function getNextUntitledName(records) {
+        let maxNum = 0;
+        const regex = /^未命名(\d+)$/;
+        records.forEach(r => {
+            const match = r.name.match(regex);
+            if (match) {
+                const num = parseInt(match[1], 10);
+                if (num > maxNum) maxNum = num;
+            }
+        });
+        return `未命名${maxNum + 1}`;
+    }
+
+    // 核心儲存函式
+    function saveRecordCore(customName = "") {
+        if (!latestResult) return;
+
+        const list = getStoredRecords();
+        const finalName = customName.trim() || getNextUntitledName(list);
+
+        const newRecord = {
+            id: Date.now(),
+            name: finalName,
+            mode: latestResult.mode,
+            currentAmount: latestResult.currentAmount,
+            targetAmount: latestResult.targetAmount,
+            neededAmount: latestResult.neededAmount,
+            minCost: latestResult.minCost,
+            obtainedAmount: latestResult.obtainedAmount,
+            finalAmount: latestResult.finalAmount,
+            breakdownSummary: latestResult.breakdown.map(b => `${b.label}: ${b.count}次`).join(' | ')
+        };
+
+        list.unshift(newRecord);
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(list));
+        isCurrentStateSaved = true; // 標記為已儲存
+        renderHistoryList();
+    }
+
+    // 手動點擊儲存按鈕
+    function manualSaveRecord() {
+        if (!latestResult) {
+            alert('請先輸入目標數量再進行儲存！');
+            return;
+        }
+        const name = recordNameInput.value;
+        saveRecordCore(name);
+        recordNameInput.value = "";
+    }
+
+    // 跳出網頁前自動儲存
+    function autoSaveBeforeLeave() {
+        // 若已有有效計算結果，且「尚未被手動儲存」時才執行自動儲存
+        if (latestResult && !isCurrentStateSaved) {
+            const name = recordNameInput.value;
+            saveRecordCore(name);
+        }
+    }
+
+    function deleteRecord(id) {
+        if (!confirm('確定要刪除這筆歷史紀錄嗎？')) return;
+        const list = getStoredRecords().filter(item => item.id !== id);
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(list));
+        renderHistoryList();
+    }
+
+    function clearAllHistory() {
+        if (getStoredRecords().length === 0) return;
+        if (!confirm('確定要清空所有的歷史紀錄嗎？')) return;
+        localStorage.removeItem(STORAGE_KEY);
+        renderHistoryList();
+    }
+
+    function loadRecord(id) {
+        const record = getStoredRecords().find(item => item.id === id);
+        if (!record) return;
+
+        setMode(record.mode);
+        currentInput.value = record.currentAmount;
+        targetInput.value = record.targetAmount;
+        recordNameInput.value = record.name;
+
+        refreshCalculation();
+        isCurrentStateSaved = true; // 載入的紀錄預設視為已儲存狀態，避免離開時重覆儲存
+
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function renderHistoryList() {
+        const records = getStoredRecords();
+        if (records.length === 0) {
+            historyListContainer.innerHTML = '<div class="history-empty">尚無儲存的歷史紀錄</div>';
+            return;
+        }
+
+        historyListContainer.innerHTML = records.map(r => `
+            <div class="history-item">
+                <div class="history-meta">
+                    <div class="history-title">${r.name}</div>
+                    <div class="history-details">
+                        ${r.mode === 'classic' ? '[489/786]' : '[666優儲]'} 
+                        持有: ${r.currentAmount}c ➔ 目標: ${r.targetAmount}c | 需補: ${r.neededAmount}c
+                    </div>
+                    <div class="history-details" style="color: var(--primary); font-weight: 600;">
+                        總計: $${r.minCost.toLocaleString()} (${r.breakdownSummary})
+                    </div>
+                </div>
+                <div class="history-actions">
+                    <button class="btn-load" onclick="loadRecord(${r.id})">載入</button>
+                    <button class="btn-delete" onclick="deleteRecord(${r.id})">刪除</button>
+                </div>
+            </div>
+        `).join('');
+    }
+
+    // 監聽輸入
+    currentInput.addEventListener('input', refreshCalculation);
+    targetInput.addEventListener('input', refreshCalculation);
+
+    // ==========================================
+    // 監聽離頁事件（手機/電腦均相容）
+    // ==========================================
+    // 1. 手機切換至其他 App 或跳回桌面
+    document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'hidden') {
+            autoSaveBeforeLeave();
+        }
+    });
+
+    // 2. 關閉分頁、重整或導航離開頁面
+    window.addEventListener('pagehide', autoSaveBeforeLeave);
+    window.addEventListener('beforeunload', autoSaveBeforeLeave);
+
+    // 初始化狀態
+    refreshCalculation();
+    renderHistoryList();
+</script>
+</body>
+</html>
