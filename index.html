@@ -2,7 +2,7 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>儲值配置計算器</title>
     <style>
         /* ============================================================
@@ -18,7 +18,7 @@
             --accent: #ef4444;         /* 【強調高亮色】：花費金額大字 */
             --border: #e2e8f0;         /* 【邊框與分隔線顏色】 */
 
-            /* 圖片專屬按鈕樣式（清空、+100、+500） */
+            /* 快捷按鈕樣式（清空、+100、+500） */
             --chip-bg: #e0edff;        /* 【修改顏色】：快捷按鈕淡藍色底色 */
             --chip-text: #4a71e0;      /* 【修改顏色】：快捷按鈕文字顏色 */
         }
@@ -31,14 +31,27 @@
             -webkit-tap-highlight-color: transparent;
         }
 
+        /* 防止手機畫面橫向超出破版 */
+        html, body {
+            width: 100%;
+            overflow-x: hidden;
+        }
+
         body {
             background-color: var(--bg);
             color: var(--text);
             display: flex;
             justify-content: center;
-            align-items: center;
+            align-items: flex-start;
             min-height: 100vh;
-            padding: 16px;
+            padding: 12px;
+        }
+
+        @media (min-width: 768px) {
+            body {
+                align-items: center;
+                padding: 20px;
+            }
         }
 
         .container {
@@ -50,37 +63,41 @@
             overflow: hidden;
             display: flex;
             flex-direction: column;
+            margin: auto;
         }
 
         header {
             background: var(--primary);
             color: white;
-            padding: 20px 24px;
+            padding: 16px 18px;
             text-align: center;
         }
 
         header h1 {
-            font-size: 1.25rem;
+            font-size: 1.2rem;
             font-weight: 700;
         }
 
         .plans-badge {
-            margin-top: 8px;
-            font-size: 0.85rem;
-            opacity: 0.9;
+            margin-top: 6px;
+            font-size: 0.8rem;
+            opacity: 0.95;
+            word-break: break-word;
         }
 
-        /* 模式切換按鈕區 */
+        /* 模式切換按鈕區：手機窄螢幕下彈性收合 */
         .mode-selector {
             display: flex;
-            gap: 10px;
-            padding: 16px 24px 0 24px;
+            flex-direction: row;
+            gap: 8px;
+            padding: 14px 14px 0 14px;
         }
 
         .mode-btn {
             flex: 1;
-            padding: 12px;
-            font-size: 0.95rem;
+            min-width: 0; /* 避免 flex 子元素被文字撐破 */
+            padding: 10px 6px;
+            font-size: 0.88rem;
             font-weight: 700;
             border: 2px solid var(--border);
             border-radius: 10px;
@@ -88,6 +105,16 @@
             color: var(--text-muted);
             cursor: pointer;
             transition: all 0.2s;
+            text-align: center;
+            word-break: break-word;
+        }
+
+        .mode-btn small {
+            display: block;
+            font-size: 0.75rem;
+            font-weight: normal;
+            margin-top: 2px;
+            line-height: 1.2;
         }
 
         .mode-btn.active {
@@ -96,28 +123,40 @@
             color: var(--primary);
         }
 
+        /* 內容佈局：手機單欄，平板與電腦（>680px）雙欄並排 */
         .content-layout {
             display: grid;
             grid-template-columns: 1fr;
-            gap: 20px;
-            padding: 20px 24px 24px 24px;
+            gap: 16px;
+            padding: 14px;
         }
 
-        @media (min-width: 640px) {
+        @media (min-width: 680px) {
             .content-layout {
                 grid-template-columns: 1fr 1fr;
+                gap: 20px;
+                padding: 20px 24px 24px 24px;
+            }
+            .mode-selector {
+                padding: 16px 24px 0 24px;
+                gap: 12px;
+            }
+            .mode-btn {
+                padding: 12px;
+                font-size: 0.95rem;
             }
         }
 
         .input-card, .result-card {
             display: flex;
             flex-direction: column;
-            gap: 16px;
+            gap: 14px;
+            min-width: 0; /* 防止子元素溢出 */
         }
 
         .input-group label {
             display: block;
-            font-size: 0.9rem;
+            font-size: 0.88rem;
             font-weight: 600;
             margin-bottom: 6px;
             color: var(--text);
@@ -125,44 +164,50 @@
 
         .input-wrapper input {
             width: 100%;
-            padding: 12px 14px;
+            padding: 11px 12px;
             border: 1.5px solid var(--border);
             border-radius: 10px;
-            font-size: 1.1rem;
+            font-size: 1rem;
             outline: none;
             transition: border-color 0.2s;
+            -webkit-appearance: none;
         }
 
         .input-wrapper input:focus {
             border-color: var(--primary);
         }
 
+        /* 快捷按鈕區：加入 wrap 確保手機螢幕窄時不會被切掉 */
         .quick-chips {
             display: flex;
-            gap: 8px;
+            flex-wrap: wrap;
+            gap: 6px;
             margin-top: 8px;
         }
 
         .chip {
-            padding: 6px 16px;
+            flex: 1 1 auto;
+            text-align: center;
+            padding: 6px 10px;
             background: var(--chip-bg);
             color: var(--chip-text);
             border: none;
             border-radius: 8px;
-            font-size: 0.95rem;
+            font-size: 0.88rem;
             font-weight: 700;
             cursor: pointer;
+            white-space: nowrap;
             transition: transform 0.1s, opacity 0.2s;
         }
 
         .chip:active {
-            transform: scale(0.95);
+            transform: scale(0.96);
             opacity: 0.8;
         }
 
         .result-card {
             background: #f1f5f9;
-            padding: 20px;
+            padding: 16px;
             border-radius: 12px;
             display: flex;
             flex-direction: column;
@@ -175,6 +220,7 @@
             align-items: center;
             padding: 8px 0;
             border-bottom: 1px dashed var(--border);
+            gap: 8px;
         }
 
         .result-row:last-child {
@@ -183,16 +229,19 @@
 
         .result-label {
             color: var(--text-muted);
-            font-size: 0.9rem;
+            font-size: 0.85rem;
+            flex-shrink: 0;
         }
 
         .result-val {
             font-weight: 700;
-            font-size: 1.05rem;
+            font-size: 0.95rem;
+            text-align: right;
+            word-break: break-all;
         }
 
         .highlight-cost {
-            font-size: 1.6rem;
+            font-size: 1.5rem;
             color: var(--accent);
             font-weight: 800;
         }
@@ -200,13 +249,13 @@
         .breakdown-box {
             background: white;
             border-radius: 8px;
-            padding: 12px;
+            padding: 10px 12px;
             margin-top: 10px;
         }
 
-        /* 儲存紀錄區塊 */
+        /* 儲存紀錄區塊：手機直向自動調整 */
         .save-box {
-            margin-top: 14px;
+            margin-top: 12px;
             padding-top: 12px;
             border-top: 1px solid var(--border);
             display: flex;
@@ -215,10 +264,11 @@
 
         .save-input {
             flex: 1;
-            padding: 8px 12px;
+            min-width: 0;
+            padding: 8px 10px;
             border: 1px solid var(--border);
             border-radius: 8px;
-            font-size: 0.9rem;
+            font-size: 0.88rem;
             outline: none;
         }
 
@@ -230,16 +280,17 @@
             background: var(--primary);
             color: white;
             border: none;
-            padding: 8px 14px;
+            padding: 8px 12px;
             border-radius: 8px;
-            font-size: 0.9rem;
+            font-size: 0.85rem;
             font-weight: 700;
             cursor: pointer;
             white-space: nowrap;
+            flex-shrink: 0;
         }
 
         .auto-save-tip {
-            font-size: 0.75rem;
+            font-size: 0.72rem;
             color: var(--text-muted);
             margin-top: 6px;
             text-align: right;
@@ -248,34 +299,40 @@
         /* 歷史紀錄外層區塊 */
         .history-section {
             border-top: 1px solid var(--border);
-            padding: 20px 24px 24px 24px;
+            padding: 16px 14px 20px 14px;
             background: #ffffff;
+        }
+
+        @media (min-width: 680px) {
+            .history-section {
+                padding: 20px 24px 24px 24px;
+            }
         }
 
         .history-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 14px;
+            margin-bottom: 12px;
         }
 
         .history-header h2 {
-            font-size: 1.05rem;
+            font-size: 0.98rem;
             font-weight: 700;
             color: var(--text);
         }
 
         .history-empty {
             color: var(--text-muted);
-            font-size: 0.9rem;
+            font-size: 0.88rem;
             text-align: center;
-            padding: 16px 0;
+            padding: 14px 0;
         }
 
         .history-list {
             display: flex;
             flex-direction: column;
-            gap: 10px;
+            gap: 8px;
             max-height: 280px;
             overflow-y: auto;
         }
@@ -284,34 +341,52 @@
             background: #f8fafc;
             border: 1px solid var(--border);
             border-radius: 10px;
-            padding: 12px 14px;
+            padding: 10px 12px;
             display: flex;
-            justify-content: space-between;
-            align-items: center;
-            gap: 12px;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        @media (min-width: 480px) {
+            .history-item {
+                flex-direction: row;
+                justify-content: space-between;
+                align-items: center;
+            }
         }
 
         .history-meta {
             display: flex;
             flex-direction: column;
             gap: 3px;
+            min-width: 0;
         }
 
         .history-title {
             font-weight: 700;
-            font-size: 0.95rem;
+            font-size: 0.9rem;
             color: var(--text);
+            word-break: break-all;
         }
 
         .history-details {
-            font-size: 0.8rem;
+            font-size: 0.78rem;
             color: var(--text-muted);
+            word-break: break-all;
         }
 
         .history-actions {
             display: flex;
             align-items: center;
             gap: 6px;
+            align-self: flex-end;
+        }
+
+        @media (min-width: 480px) {
+            .history-actions {
+                align-self: center;
+                flex-shrink: 0;
+            }
         }
 
         .btn-load {
@@ -320,7 +395,7 @@
             border: none;
             padding: 5px 10px;
             border-radius: 6px;
-            font-size: 0.8rem;
+            font-size: 0.78rem;
             font-weight: 700;
             cursor: pointer;
         }
@@ -331,7 +406,7 @@
             border: none;
             padding: 5px 10px;
             border-radius: 6px;
-            font-size: 0.8rem;
+            font-size: 0.78rem;
             font-weight: 700;
             cursor: pointer;
         }
@@ -348,10 +423,10 @@
     <!-- 模式選擇 -->
     <div class="mode-selector">
         <button class="mode-btn active" id="btnModeClassic" onclick="setMode('classic')">
-            489、786 方案<br><small style="font-weight:normal;">(489元=180c / 786元=290c)</small>
+            489、786 方案<small>(489元=180c / 786元=290c)</small>
         </button>
         <button class="mode-btn" id="btnMode666" onclick="setMode('666')">
-            666 優儲方案<br><small style="font-weight:normal;">(666元=246c)</small>
+            666 優儲方案<small>(666元=246c)</small>
         </button>
     </div>
 
@@ -396,21 +471,21 @@
                 </div>
 
                 <div class="result-row" style="margin-top: 10px;">
-                    <span class="result-label">實際獲得 / 最終總量</span>
+                    <span class="result-label">獲得 / 最終總量</span>
                     <span class="result-val" id="displayFinal">-</span>
                 </div>
             </div>
 
             <div>
-                <div class="result-row" style="margin-top: 16px; border: none;">
-                    <span class="result-label" style="font-size: 1.1rem; font-weight: 700;">最低總花費</span>
+                <div class="result-row" style="margin-top: 14px; border: none;">
+                    <span class="result-label" style="font-size: 1rem; font-weight: 700;">最低總花費</span>
                     <span class="highlight-cost" id="displayCost">$0</span>
                 </div>
 
                 <!-- 儲存紀錄區 -->
                 <div class="save-box">
-                    <input type="text" id="recordNameInput" class="save-input" placeholder="自訂紀錄名稱 (未填則為「未命名N」)">
-                    <button class="btn-save" onclick="manualSaveRecord()">儲存此紀錄</button>
+                    <input type="text" id="recordNameInput" class="save-input" placeholder="紀錄名稱 (留空為「未命名N」)">
+                    <button class="btn-save" onclick="manualSaveRecord()">儲存</button>
                 </div>
                 <div class="auto-save-tip">提示：跳出或關閉網頁前，若未儲存將自動備份</div>
             </div>
@@ -421,7 +496,7 @@
     <div class="history-section">
         <div class="history-header">
             <h2>儲存的歷史紀錄</h2>
-            <button class="chip" style="font-size: 0.75rem; padding: 4px 10px;" onclick="clearAllHistory()">清空全部</button>
+            <button class="chip" style="font-size: 0.75rem; padding: 4px 8px; flex: 0 0 auto;" onclick="clearAllHistory()">清空全部</button>
         </div>
         <div id="historyListContainer" class="history-list">
             <!-- 歷史紀錄項目由 JS 動態生成 -->
@@ -432,7 +507,7 @@
 <script>
     let currentMode = 'classic';
     let latestResult = null;
-    let isCurrentStateSaved = false; // 追蹤當前計算狀態是否已完成儲存
+    let isCurrentStateSaved = false;
 
     const currentInput = document.getElementById('currentAmountInput');
     const targetInput = document.getElementById('targetAmountInput');
@@ -553,7 +628,6 @@
             ...result
         };
 
-        // 每次數值變動，將已儲存標記重設為 false
         isCurrentStateSaved = false;
 
         document.getElementById('displayNeeded').innerText = `${result.neededAmount} c`;
@@ -585,7 +659,7 @@
     }
 
     // ==========================================
-    // 歷史紀錄處理邏輯（localStorage）
+    // 歷史紀錄處理邏輯
     // ==========================================
     const STORAGE_KEY = 'c_calculator_records_v1';
 
@@ -597,7 +671,6 @@
         }
     }
 
-    // 計算下一個「未命名N」的數字序號
     function getNextUntitledName(records) {
         let maxNum = 0;
         const regex = /^未命名(\d+)$/;
@@ -611,7 +684,6 @@
         return `未命名${maxNum + 1}`;
     }
 
-    // 核心儲存函式
     function saveRecordCore(customName = "") {
         if (!latestResult) return;
 
@@ -633,11 +705,10 @@
 
         list.unshift(newRecord);
         localStorage.setItem(STORAGE_KEY, JSON.stringify(list));
-        isCurrentStateSaved = true; // 標記為已儲存
+        isCurrentStateSaved = true;
         renderHistoryList();
     }
 
-    // 手動點擊儲存按鈕
     function manualSaveRecord() {
         if (!latestResult) {
             alert('請先輸入目標數量再進行儲存！');
@@ -648,9 +719,7 @@
         recordNameInput.value = "";
     }
 
-    // 跳出網頁前自動儲存
     function autoSaveBeforeLeave() {
-        // 若已有有效計算結果，且「尚未被手動儲存」時才執行自動儲存
         if (latestResult && !isCurrentStateSaved) {
             const name = recordNameInput.value;
             saveRecordCore(name);
@@ -681,7 +750,7 @@
         recordNameInput.value = record.name;
 
         refreshCalculation();
-        isCurrentStateSaved = true; // 載入的紀錄預設視為已儲存狀態，避免離開時重覆儲存
+        isCurrentStateSaved = true;
 
         window.scrollTo({ top: 0, behavior: 'smooth' });
     }
@@ -713,25 +782,18 @@
         `).join('');
     }
 
-    // 監聽輸入
     currentInput.addEventListener('input', refreshCalculation);
     targetInput.addEventListener('input', refreshCalculation);
 
-    // ==========================================
-    // 監聽離頁事件（手機/電腦均相容）
-    // ==========================================
-    // 1. 手機切換至其他 App 或跳回桌面
     document.addEventListener('visibilitychange', () => {
         if (document.visibilityState === 'hidden') {
             autoSaveBeforeLeave();
         }
     });
 
-    // 2. 關閉分頁、重整或導航離開頁面
     window.addEventListener('pagehide', autoSaveBeforeLeave);
     window.addEventListener('beforeunload', autoSaveBeforeLeave);
 
-    // 初始化狀態
     refreshCalculation();
     renderHistoryList();
 </script>
