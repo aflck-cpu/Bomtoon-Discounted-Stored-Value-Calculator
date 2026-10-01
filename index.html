@@ -31,7 +31,6 @@
             -webkit-tap-highlight-color: transparent;
         }
 
-        /* 防止手機畫面橫向超出破版 */
         html, body {
             width: 100%;
             overflow-x: hidden;
@@ -85,7 +84,6 @@
             word-break: break-word;
         }
 
-        /* 模式切換按鈕區：手機窄螢幕下彈性收合 */
         .mode-selector {
             display: flex;
             flex-direction: row;
@@ -95,7 +93,7 @@
 
         .mode-btn {
             flex: 1;
-            min-width: 0; /* 避免 flex 子元素被文字撐破 */
+            min-width: 0;
             padding: 10px 6px;
             font-size: 0.88rem;
             font-weight: 700;
@@ -123,7 +121,6 @@
             color: var(--primary);
         }
 
-        /* 內容佈局：手機單欄，平板與電腦（>680px）雙欄並排 */
         .content-layout {
             display: grid;
             grid-template-columns: 1fr;
@@ -151,7 +148,7 @@
             display: flex;
             flex-direction: column;
             gap: 14px;
-            min-width: 0; /* 防止子元素溢出 */
+            min-width: 0;
         }
 
         .input-group label {
@@ -177,7 +174,6 @@
             border-color: var(--primary);
         }
 
-        /* 快捷按鈕區：加入 wrap 確保手機螢幕窄時不會被切掉 */
         .quick-chips {
             display: flex;
             flex-wrap: wrap;
@@ -253,7 +249,6 @@
             margin-top: 10px;
         }
 
-        /* 儲存紀錄區塊：手機直向自動調整 */
         .save-box {
             margin-top: 12px;
             padding-top: 12px;
@@ -314,12 +309,47 @@
             justify-content: space-between;
             align-items: center;
             margin-bottom: 12px;
+            flex-wrap: wrap;
+            gap: 8px;
         }
 
         .history-header h2 {
             font-size: 0.98rem;
             font-weight: 700;
             color: var(--text);
+        }
+
+        .batch-actions {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .select-all-label {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .btn-batch-delete {
+            background: #fee2e2;
+            color: #dc2626;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 6px;
+            font-size: 0.78rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: opacity 0.2s;
+        }
+
+        .btn-batch-delete:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
         }
 
         .history-empty {
@@ -333,7 +363,7 @@
             display: flex;
             flex-direction: column;
             gap: 8px;
-            max-height: 280px;
+            max-height: 320px;
             overflow-y: auto;
         }
 
@@ -343,12 +373,29 @@
             border-radius: 10px;
             padding: 10px 12px;
             display: flex;
+            align-items: flex-start;
+            gap: 10px;
+        }
+
+        .record-checkbox {
+            margin-top: 4px;
+            width: 17px;
+            height: 17px;
+            accent-color: var(--primary);
+            cursor: pointer;
+            flex-shrink: 0;
+        }
+
+        .history-content {
+            flex: 1;
+            min-width: 0;
+            display: flex;
             flex-direction: column;
             gap: 8px;
         }
 
         @media (min-width: 480px) {
-            .history-item {
+            .history-content {
                 flex-direction: row;
                 justify-content: space-between;
                 align-items: center;
@@ -362,11 +409,27 @@
             min-width: 0;
         }
 
+        .history-title-row {
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 6px;
+        }
+
         .history-title {
             font-weight: 700;
             font-size: 0.9rem;
             color: var(--text);
             word-break: break-all;
+        }
+
+        .history-time-tag {
+            font-size: 0.72rem;
+            color: var(--text-muted);
+            background: var(--border);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-weight: normal;
         }
 
         .history-details {
@@ -420,7 +483,6 @@
         <div class="plans-badge" id="bannerBadge">當前選擇：489、786方案組合</div>
     </header>
 
-    <!-- 模式選擇 -->
     <div class="mode-selector">
         <button class="mode-btn active" id="btnModeClassic" onclick="setMode('classic')">
             489、786 方案<small>(489元=180c / 786元=290c)</small>
@@ -482,7 +544,6 @@
                     <span class="highlight-cost" id="displayCost">$0</span>
                 </div>
 
-                <!-- 儲存紀錄區 -->
                 <div class="save-box">
                     <input type="text" id="recordNameInput" class="save-input" placeholder="紀錄名稱 (留空為「未命名N」)">
                     <button class="btn-save" onclick="manualSaveRecord()">儲存</button>
@@ -496,10 +557,15 @@
     <div class="history-section">
         <div class="history-header">
             <h2>儲存的歷史紀錄</h2>
-            <button class="chip" style="font-size: 0.75rem; padding: 4px 8px; flex: 0 0 auto;" onclick="clearAllHistory()">清空全部</button>
+            <div class="batch-actions" id="batchActionControls" style="display: none;">
+                <label class="select-all-label">
+                    <input type="checkbox" id="selectAllCheckbox" onchange="toggleSelectAll(this.checked)"> 全選
+                </label>
+                <button class="btn-batch-delete" id="btnBatchDelete" onclick="deleteSelectedRecords()" disabled>刪除所選 (0)</button>
+            </div>
         </div>
         <div id="historyListContainer" class="history-list">
-            <!-- 歷史紀錄項目由 JS 動態生成 -->
+            <!-- 歷史紀錄由 JS 動態產生 -->
         </div>
     </div>
 </div>
@@ -508,6 +574,7 @@
     let currentMode = 'classic';
     let latestResult = null;
     let isCurrentStateSaved = false;
+    let selectedRecordIds = new Set(); // 儲存多選勾選的 id
 
     const currentInput = document.getElementById('currentAmountInput');
     const targetInput = document.getElementById('targetAmountInput');
@@ -515,6 +582,9 @@
     const breakdownContainer = document.getElementById('breakdownContainer');
     const recordNameInput = document.getElementById('recordNameInput');
     const historyListContainer = document.getElementById('historyListContainer');
+    const batchActionControls = document.getElementById('batchActionControls');
+    const selectAllCheckbox = document.getElementById('selectAllCheckbox');
+    const btnBatchDelete = document.getElementById('btnBatchDelete');
 
     function setMode(mode) {
         currentMode = mode;
@@ -659,9 +729,19 @@
     }
 
     // ==========================================
-    // 歷史紀錄處理邏輯
+    // 歷史紀錄處理邏輯（包含多選批次刪除）
     // ==========================================
     const STORAGE_KEY = 'c_calculator_records_v1';
+
+    function getFormattedTimestamp() {
+        const now = new Date();
+        const year = now.getFullYear();
+        const month = String(now.getMonth() + 1).padStart(2, '0');
+        const date = String(now.getDate()).padStart(2, '0');
+        const hours = String(now.getHours()).padStart(2, '0');
+        const minutes = String(now.getMinutes()).padStart(2, '0');
+        return `${year}/${month}/${date} ${hours}:${minutes}`;
+    }
 
     function getStoredRecords() {
         try {
@@ -693,6 +773,7 @@
         const newRecord = {
             id: Date.now(),
             name: finalName,
+            timestamp: getFormattedTimestamp(),
             mode: latestResult.mode,
             currentAmount: latestResult.currentAmount,
             targetAmount: latestResult.targetAmount,
@@ -728,16 +809,57 @@
 
     function deleteRecord(id) {
         if (!confirm('確定要刪除這筆歷史紀錄嗎？')) return;
-        const list = getStoredRecords().filter(item => item.id !== id);
+        let list = getStoredRecords().filter(item => item.id !== id);
+        selectedRecordIds.delete(id);
         localStorage.setItem(STORAGE_KEY, JSON.stringify(list));
         renderHistoryList();
     }
 
-    function clearAllHistory() {
-        if (getStoredRecords().length === 0) return;
-        if (!confirm('確定要清空所有的歷史紀錄嗎？')) return;
-        localStorage.removeItem(STORAGE_KEY);
+    // 勾選單一項目
+    function toggleRecordSelection(id, isChecked) {
+        if (isChecked) {
+            selectedRecordIds.add(id);
+        } else {
+            selectedRecordIds.delete(id);
+        }
+        updateBatchButtonState();
+    }
+
+    // 全選 / 取消全選
+    function toggleSelectAll(isChecked) {
+        const records = getStoredRecords();
+        if (isChecked) {
+            records.forEach(r => selectedRecordIds.add(r.id));
+        } else {
+            selectedRecordIds.clear();
+        }
         renderHistoryList();
+    }
+
+    // 批次刪除選取的紀錄
+    function deleteSelectedRecords() {
+        const count = selectedRecordIds.size;
+        if (count === 0) return;
+
+        if (!confirm(`確定要刪除已選取的 ${count} 筆歷史紀錄嗎？`)) return;
+
+        let list = getStoredRecords().filter(item => !selectedRecordIds.has(item.id));
+        selectedRecordIds.clear();
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(list));
+        renderHistoryList();
+    }
+
+    // 更新批次刪除按鈕狀態
+    function updateBatchButtonState() {
+        const count = selectedRecordIds.size;
+        const total = getStoredRecords().length;
+
+        btnBatchDelete.innerText = `刪除所選 (${count})`;
+        btnBatchDelete.disabled = count === 0;
+
+        if (selectAllCheckbox) {
+            selectAllCheckbox.checked = total > 0 && count === total;
+        }
     }
 
     function loadRecord(id) {
@@ -757,29 +879,45 @@
 
     function renderHistoryList() {
         const records = getStoredRecords();
+
         if (records.length === 0) {
+            batchActionControls.style.display = 'none';
             historyListContainer.innerHTML = '<div class="history-empty">尚無儲存的歷史紀錄</div>';
+            selectedRecordIds.clear();
             return;
         }
 
-        historyListContainer.innerHTML = records.map(r => `
-            <div class="history-item">
-                <div class="history-meta">
-                    <div class="history-title">${r.name}</div>
-                    <div class="history-details">
-                        ${r.mode === 'classic' ? '[489/786]' : '[666優儲]'} 
-                        持有: ${r.currentAmount}c ➔ 目標: ${r.targetAmount}c | 需補: ${r.neededAmount}c
-                    </div>
-                    <div class="history-details" style="color: var(--primary); font-weight: 600;">
-                        總計: $${r.minCost.toLocaleString()} (${r.breakdownSummary})
+        batchActionControls.style.display = 'flex';
+
+        historyListContainer.innerHTML = records.map(r => {
+            const isChecked = selectedRecordIds.has(r.id) ? 'checked' : '';
+            return `
+                <div class="history-item">
+                    <input type="checkbox" class="record-checkbox" ${isChecked} onchange="toggleRecordSelection(${r.id}, this.checked)">
+                    <div class="history-content">
+                        <div class="history-meta">
+                            <div class="history-title-row">
+                                <span class="history-title">${r.name}</span>
+                                <span class="history-time-tag">${r.timestamp || '已儲存'}</span>
+                            </div>
+                            <div class="history-details">
+                                ${r.mode === 'classic' ? '[489/786]' : '[666優儲]'} 
+                                持有: ${r.currentAmount}c ➔ 目標: ${r.targetAmount}c | 需補: ${r.neededAmount}c
+                            </div>
+                            <div class="history-details" style="color: var(--primary); font-weight: 600;">
+                                總計: $${r.minCost.toLocaleString()} (${r.breakdownSummary})
+                            </div>
+                        </div>
+                        <div class="history-actions">
+                            <button class="btn-load" onclick="loadRecord(${r.id})">載入</button>
+                            <button class="btn-delete" onclick="deleteRecord(${r.id})">刪除</button>
+                        </div>
                     </div>
                 </div>
-                <div class="history-actions">
-                    <button class="btn-load" onclick="loadRecord(${r.id})">載入</button>
-                    <button class="btn-delete" onclick="deleteRecord(${r.id})">刪除</button>
-                </div>
-            </div>
-        `).join('');
+            `;
+        }).join('');
+
+        updateBatchButtonState();
     }
 
     currentInput.addEventListener('input', refreshCalculation);
